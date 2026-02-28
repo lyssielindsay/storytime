@@ -449,6 +449,7 @@ function setupRec() {
   const r = new SR();
   r.continuous = false; r.interimResults = true; r.lang = 'en-US';
   r.onresult = (e) => {
+    if (recognition !== r) return; // stale event from aborted instance — ignore
     let fin = '', int = '';
     for (let i = e.resultIndex; i < e.results.length; i++) {
       if (e.results[i].isFinal) fin += e.results[i][0].transcript;
@@ -459,12 +460,14 @@ function setupRec() {
     if (transcript) document.getElementById('storyBtn').disabled = false;
   };
   r.onend = () => {
+    if (recognition !== r) return; // stale event from aborted instance — ignore
     isListening = false;
     document.getElementById('micBtn').classList.remove('listening');
     document.querySelector('.mic-label').textContent = 'Tap to talk!';
     if (transcript) document.getElementById('storyBtn').disabled = false;
   };
   r.onerror = (e) => {
+    if (recognition !== r) return; // stale event from aborted instance — ignore
     isListening = false;
     recognition = null;
     document.getElementById('micBtn').classList.remove('listening');
