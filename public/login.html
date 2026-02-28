@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Story Time ✨</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: #0d0826;
+  color: white;
+  min-height: 100dvh;
+  display: flex; align-items: center; justify-content: center;
+}
+.stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.star { position: absolute; background: white; border-radius: 50%; animation: twinkle var(--d) ease-in-out infinite alternate; }
+@keyframes twinkle { from { opacity: 0.1; } to { opacity: 0.9; } }
+.moon {
+  position: fixed; top: 20px; right: 24px;
+  width: 56px; height: 56px;
+  background: radial-gradient(circle at 40% 40%, #fff9e6, #f9c846);
+  border-radius: 50%;
+  box-shadow: 0 0 40px 10px rgba(249,200,70,0.35);
+  z-index: 1;
+}
+.card {
+  position: relative; z-index: 2;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 28px; padding: 40px 32px;
+  width: 100%; max-width: 400px; margin: 20px;
+  backdrop-filter: blur(12px);
+  text-align: center;
+}
+h1 {
+  font-family: 'Fredoka One', cursive;
+  font-size: 2.8rem; color: #f9c846;
+  text-shadow: 0 0 30px rgba(249,200,70,0.5);
+  margin-bottom: 8px;
+}
+p { color: #c4b5fd; font-size: 1rem; margin-bottom: 28px; }
+input {
+  width: 100%; background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 14px;
+  padding: 15px 18px; color: white;
+  font-family: 'Nunito', sans-serif; font-size: 1.1rem;
+  outline: none; margin-bottom: 14px; text-align: center;
+  letter-spacing: 3px;
+}
+input:focus { border-color: #6ee7b7; }
+input::placeholder { color: rgba(255,255,255,0.3); letter-spacing: 1px; }
+button {
+  width: 100%; background: linear-gradient(135deg, #f9c846, #f5a623);
+  border: none; border-radius: 16px; padding: 17px;
+  font-family: 'Fredoka One', cursive; font-size: 1.4rem; color: #4a2800;
+  cursor: pointer; box-shadow: 0 6px 24px rgba(249,200,70,0.4);
+  transition: transform 0.15s;
+}
+button:active { transform: scale(0.97); }
+button:disabled { opacity: 0.5; cursor: default; }
+.error {
+  display: none; color: #fca5a5; font-size: 0.9rem;
+  margin-top: 12px; font-weight: 600;
+}
+.error.show { display: block; }
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="moon"></div>
+<div class="card">
+  <h1>✨ Story Time ✨</h1>
+  <p>Enter the family password to start making stories!</p>
+  <input type="password" id="passwordInput" placeholder="password" autocomplete="off" />
+  <button id="loginBtn" onclick="login()">Let's Go! 🚀</button>
+  <div class="error" id="errorMsg">Wrong password — try again! 🙈</div>
+</div>
+
+<script>
+(function() {
+  const c = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = Math.random() * 3 + 1;
+    s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*3+1.5).toFixed(1)}s;animation-delay:${(Math.random()*3).toFixed(1)}s`;
+    c.appendChild(s);
+  }
+})();
+
+document.getElementById('passwordInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
+});
+
+async function login() {
+  const password = document.getElementById('passwordInput').value.trim();
+  if (!password) return;
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('errorMsg');
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+  err.classList.remove('show');
+
+  try {
+    const res = await fetch('/.netlify/functions/auth-login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      window.location.href = '/';
+    } else {
+      err.classList.add('show');
+      btn.disabled = false;
+      btn.textContent = "Let's Go! 🚀";
+    }
+  } catch(e) {
+    err.textContent = 'Something went wrong. Try again!';
+    err.classList.add('show');
+    btn.disabled = false;
+    btn.textContent = "Let's Go! 🚀";
+  }
+}
+</script>
+</body>
+</html>

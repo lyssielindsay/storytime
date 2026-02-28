@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Story Time ✨">
+<title>Story Time ✨</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --deep: #0d0826;
+  --gold: #f9c846;
+  --rose: #ff6b9d;
+  --mint: #6ee7b7;
+  --lavender: #c4b5fd;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--deep);
+  color: white;
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* Stars */
+.stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.star {
+  position: absolute; background: white; border-radius: 50%;
+  animation: twinkle var(--d) ease-in-out infinite alternate;
+}
+@keyframes twinkle {
+  from { opacity: 0.1; transform: scale(1); }
+  to { opacity: 0.9; transform: scale(1.4); }
+}
+.moon {
+  position: fixed; top: 20px; right: 24px;
+  width: 56px; height: 56px;
+  background: radial-gradient(circle at 40% 40%, #fff9e6, #f9c846);
+  border-radius: 50%;
+  box-shadow: 0 0 40px 10px rgba(249,200,70,0.35);
+  z-index: 1;
+  animation: moonGlow 4s ease-in-out infinite alternate;
+}
+@keyframes moonGlow {
+  from { box-shadow: 0 0 40px 10px rgba(249,200,70,0.3); }
+  to { box-shadow: 0 0 60px 20px rgba(249,200,70,0.55); }
+}
+
+/* App shell */
+.app {
+  position: relative; z-index: 2;
+  min-height: 100dvh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 20px 16px 40px;
+}
+
+/* Header */
+.header { text-align: center; margin-bottom: 28px; margin-top: 6px; }
+.header h1 {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(2rem, 8vw, 3.2rem);
+  color: var(--gold);
+  text-shadow: 0 0 30px rgba(249,200,70,0.5);
+}
+.header p { font-size: 1rem; color: var(--lavender); margin-top: 4px; font-weight: 600; }
+
+
+
+/* Main controls */
+.controls {
+  width: 100%; max-width: 480px;
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+}
+.mic-btn {
+  width: 148px; height: 148px; border-radius: 50%;
+  background: linear-gradient(145deg, #ff6b9d, #c94b7b);
+  border: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  box-shadow: 0 8px 32px rgba(255,107,157,0.5);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s;
+}
+.mic-btn:active { transform: scale(0.93); }
+.mic-btn.listening { animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse {
+  0% { box-shadow: 0 8px 32px rgba(255,107,157,0.5), 0 0 0 0 rgba(255,107,157,0.5); }
+  70% { box-shadow: 0 8px 32px rgba(255,107,157,0.5), 0 0 0 28px rgba(255,107,157,0); }
+  100% { box-shadow: 0 8px 32px rgba(255,107,157,0.5), 0 0 0 0 rgba(255,107,157,0); }
+}
+.mic-icon { font-size: 3rem; line-height: 1; }
+.mic-label { font-family: 'Fredoka One', cursive; font-size: 0.9rem; color: white; }
+
+.transcript-bubble {
+  background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 18px; padding: 13px 17px;
+  width: 100%; min-height: 52px; font-size: 1rem;
+  color: white; font-style: italic; text-align: center;
+  display: flex; align-items: center; justify-content: center;
+}
+.transcript-bubble.empty { color: rgba(255,255,255,0.35); font-style: normal; }
+
+.btn-story {
+  width: 100%; background: linear-gradient(135deg, var(--gold), #f5a623);
+  border: none; border-radius: 18px; padding: 17px;
+  font-family: 'Fredoka One', cursive; font-size: 1.45rem; color: #4a2800;
+  cursor: pointer; box-shadow: 0 6px 24px rgba(249,200,70,0.4);
+  transition: transform 0.15s, opacity 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-story:disabled { opacity: 0.4; cursor: default; }
+.btn-story:not(:disabled):active { transform: scale(0.97); }
+
+/* Loading counter */
+.loading { display: none; flex-direction: column; align-items: center; gap: 0; width: 100%; max-width: 480px; }
+.loading.show { display: flex; }
+.loading-game {
+  position: relative; width: 100%; height: 380px;
+  overflow: hidden; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.loading-label {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.1rem; color: var(--lavender);
+  margin-top: 8px; text-align: center;
+}
+.pop-score {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.8rem; color: var(--gold);
+  text-shadow: 0 0 20px rgba(249,200,70,0.6);
+  margin-bottom: 4px;
+}
+.pop-emoji {
+  position: absolute;
+  font-size: 3rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  animation: floatDown var(--fall) linear forwards;
+  user-select: none;
+}
+@keyframes floatDown {
+  from { transform: translateY(-60px) scale(1) rotate(0deg); opacity: 1; }
+  to   { transform: translateY(420px) scale(0.8) rotate(var(--rot)); opacity: 0.6; }
+}
+.pop-emoji.popped {
+  animation: popBurst 0.35s ease-out forwards !important;
+  pointer-events: none;
+}
+@keyframes popBurst {
+  0%   { transform: scale(1); opacity: 1; }
+  40%  { transform: scale(2.2) rotate(15deg); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* Error */
+.error-msg {
+  display: none; background: rgba(255,80,80,0.15);
+  border: 1px solid rgba(255,80,80,0.3); border-radius: 14px;
+  padding: 13px 17px; font-size: 0.93rem; color: #fca5a5;
+  text-align: center; width: 100%; max-width: 480px;
+}
+.error-msg.show { display: block; }
+
+/* ===================== READER ===================== */
+.reader { display: none; width: 100%; max-width: 560px; flex-direction: column; align-items: center; gap: 14px; }
+.reader.show { display: flex; }
+
+.story-title-display {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(1.4rem, 5.5vw, 2rem);
+  color: var(--gold); text-align: center;
+  text-shadow: 0 0 24px rgba(249,200,70,0.4);
+}
+
+/* Page card */
+.page-card {
+  width: 100%; background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 26px;
+  overflow: hidden; backdrop-filter: blur(14px);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.4);
+  animation: pageIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Scene illustration */
+.scene-box {
+  width: 100%; height: 220px; position: relative; overflow: hidden;
+  background: linear-gradient(160deg, #1a0a3a, #0d1a4a);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; user-select: none;
+}
+.scene-bg {
+  position: absolute; inset: 0;
+  display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: 10px; gap: 8px; flex-wrap: wrap;
+  font-size: 2.2rem; pointer-events: none;
+}
+.scene-main {
+  font-size: 6rem; line-height: 1;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+  position: relative; z-index: 2;
+  animation: float 3s ease-in-out infinite;
+}
+@keyframes float {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.scene-main.wiggle { animation: wiggle 0.4s ease-in-out; }
+@keyframes wiggle {
+  0%,100% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-15deg) scale(1.2); }
+  75% { transform: rotate(15deg) scale(1.2); }
+}
+.scene-tap-hint {
+  position: absolute; bottom: 8px; right: 12px;
+  font-size: 0.72rem; color: rgba(255,255,255,0.45);
+  font-family: 'Fredoka One', cursive; pointer-events: none;
+}
+.particle {
+  position: absolute; font-size: 1.6rem; pointer-events: none;
+  animation: burst 0.7s ease-out forwards;
+}
+@keyframes burst {
+  0% { opacity: 1; transform: translate(0,0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.3); }
+}
+
+/* Page body */
+.page-body { padding: 20px 20px 16px; }
+.page-counter { font-size: 0.75rem; color: rgba(255,255,255,0.3); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+.page-text { font-size: clamp(1rem, 3.5vw, 1.15rem); line-height: 1.8; color: rgba(255,255,255,0.92); }
+
+/* Sound buttons */
+.sound-buttons { display: flex; justify-content: center; padding: 0 20px 16px; }
+.btn-sound {
+  background: linear-gradient(135deg, #ff6b9d, #c94b7b);
+  border: none; border-radius: 20px; padding: 16px 32px;
+  font-family: 'Fredoka One', cursive; font-size: 1.6rem; color: white;
+  cursor: pointer; transition: transform 0.1s;
+  box-shadow: 0 6px 20px rgba(255,107,157,0.45);
+  -webkit-tap-highlight-color: transparent; width: 100%;
+}
+.btn-sound:active { transform: scale(0.93); }
+
+/* Minigame */
+
+
+/* Shake hint */
+.shake-hint { text-align: center; font-size: 0.8rem; color: rgba(255,255,255,0.35); font-family: 'Fredoka One', cursive; padding-bottom: 4px; }
+
+/* Nav */
+.page-nav { display: flex; gap: 10px; width: 100%; }
+.btn-next {
+  flex: 1; background: linear-gradient(135deg, var(--gold), #f5a623);
+  border: none; border-radius: 18px; padding: 17px;
+  font-family: 'Fredoka One', cursive; font-size: 1.4rem; color: #4a2800;
+  cursor: pointer; box-shadow: 0 6px 24px rgba(249,200,70,0.35);
+  transition: transform 0.15s; -webkit-tap-highlight-color: transparent;
+}
+.btn-next:active { transform: scale(0.96); }
+.btn-prev {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 18px; padding: 17px 18px;
+  font-family: 'Fredoka One', cursive; font-size: 1.4rem; color: rgba(255,255,255,0.55);
+  cursor: pointer; transition: transform 0.15s; -webkit-tap-highlight-color: transparent;
+}
+.btn-prev:active { transform: scale(0.96); }
+
+/* The End */
+.the-end {
+  display: none; text-align: center; padding: 16px 0 8px;
+  animation: pageIn 0.5s 0.2s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.the-end h3 { font-family: 'Fredoka One', cursive; font-size: 2rem; color: var(--gold); text-shadow: 0 0 24px rgba(249,200,70,0.5); }
+.the-end p { color: var(--lavender); font-size: 0.95rem; margin: 4px 0 16px; }
+.btn-new {
+  width: 100%; background: linear-gradient(135deg, var(--rose), #c94b7b);
+  border: none; border-radius: 18px; padding: 17px;
+  font-family: 'Fredoka One', cursive; font-size: 1.25rem; color: white;
+  cursor: pointer; box-shadow: 0 6px 24px rgba(255,107,157,0.35);
+  transition: transform 0.15s; -webkit-tap-highlight-color: transparent;
+}
+.btn-new:active { transform: scale(0.96); }
+
+/* Shake */
+@keyframes shakeScreen {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-12px) rotate(-1deg); }
+  40% { transform: translateX(12px) rotate(1deg); }
+  60% { transform: translateX(-8px); }
+  80% { transform: translateX(8px); }
+}
+.shake-anim { animation: shakeScreen 0.4s ease-in-out; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<!-- Silent video to force iOS speaker output instead of earpiece -->
+<video id="iosSpeakerUnlock" playsinline muted loop style="display:none">
+  <source src="data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28yYXZjMW1wNDEAAAAIZnJlZQAAACxtZGF0" type="video/mp4">
+</video>
+<div class="moon"></div>
+
+<div class="app" id="appShell">
+  <div class="header">
+    <h1>✨ Story Time ✨</h1>
+    <p>Tell me what you want in your story!</p>
+  </div>
+
+  <!-- Auth handled server-side, no setup card needed -->
+
+  <!-- Controls -->
+  <div class="controls" id="mainControls" style="display:none">
+    <button class="mic-btn" id="micBtn" onclick="toggleMic()">
+      <span class="mic-icon">🎤</span>
+      <span class="mic-label">Tap to talk!</span>
+    </button>
+    <div class="transcript-bubble empty" id="transcript">
+      Tap the pink button and tell me what you want! 🌟
+    </div>
+    <button class="btn-story" id="storyBtn" onclick="generateStory()" disabled>
+      🪄 Make My Story!
+    </button>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="pop-score" id="popScore">✨ Tap to pop!</div>
+    <div class="loading-game" id="loadingGame"></div>
+    <div class="loading-label" id="loadingMsg">Making your story...</div>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+
+  <!-- Reader -->
+  <div class="reader" id="reader">
+    <div class="story-title-display" id="storyTitle"></div>
+    <div class="page-card" id="pageCard">
+      <div class="scene-box" id="sceneBox" onclick="tapScene()">
+        <div class="scene-bg" id="sceneBg"></div>
+        <div class="scene-main" id="sceneMain">🌟</div>
+        <div class="scene-tap-hint">tap me!</div>
+      </div>
+      <div class="page-body">
+        <div class="page-counter" id="pageCounter">Page 1</div>
+        <div class="page-text" id="pageText"></div>
+      </div>
+      <div class="sound-buttons" id="soundButtons"></div>
+
+      <div class="shake-hint" id="shakeHint" style="display:none">📱 Shake for a surprise!</div>
+    </div>
+    <div class="page-nav" id="pageNav">
+      <button class="btn-prev" id="prevBtn" onclick="changePage(-1)" style="display:none">◀</button>
+      <button class="btn-next" id="nextBtn" onclick="changePage(1)">Next ➡️</button>
+    </div>
+    <div class="the-end" id="theEnd">
+      <h3>🌙 The End!</h3>
+      <p>Sweet dreams ✨</p>
+      <button class="btn-new" onclick="newStory()">🌟 Make another story!</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================== CONFIG =====================
+const MODEL = 'claude-sonnet-4-6'; // safe to keep client-side, not a secret
+
+// Personal config — loaded from server after auth (see init())
+let STORIES_PER_DAY = 3;
+let STORY_PROMPT_EXTRAS = 'Always start with Once upon a time.';
+let KIDS = [];
+let AUNTY = 'Aunty';
+
+// API keys are now server-side only — never exposed to browser
+
+// ===================== STARS =====================
+(function() {
+  const c = document.getElementById('stars');
+  for (let i = 0; i < 100; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = Math.random() * 3 + 1;
+    s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${(Math.random()*3+1.5).toFixed(1)}s;animation-delay:${(Math.random()*3).toFixed(1)}s`;
+    c.appendChild(s);
+  }
+})();
+
+// ===================== AUTH CHECK =====================
+// On load, verify auth cookie via a lightweight probe
+// If 401, redirect to /login
+
+// ===================== DAILY LIMIT =====================
+function todayKey() { return 'stories_' + new Date().toISOString().slice(0,10); }
+function getUsed() { return parseInt(localStorage.getItem(todayKey()) || '0', 10); }
+function incUsed() { localStorage.setItem(todayKey(), getUsed() + 1); }
+function updateLimitUI() {
+  if (getUsed() >= STORIES_PER_DAY) {
+    document.getElementById('storyBtn').disabled = true;
+    document.getElementById('storyBtn').textContent = '🌙 Come back tomorrow!';
+    document.getElementById('micBtn').disabled = true;
+    document.querySelector('.mic-label').textContent = 'All done today!';
+  }
+}
+
+async function init() {
+  // Load config (also doubles as auth check — returns 401 if not logged in)
+  try {
+    const res = await fetch('/.netlify/functions/get-config', {
+      method: 'GET',
+      credentials: 'include',
+    });
+    if (res.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+    if (res.ok) {
+      const cfg = await res.json();
+      KIDS = cfg.kids || [];
+      AUNTY = cfg.aunty || 'Aunty';
+      STORIES_PER_DAY = cfg.storiesPerDay || 3;
+      STORY_PROMPT_EXTRAS = cfg.storyPromptExtras || '';
+    }
+  } catch(e) {
+    // Network error - still show app, functions will enforce auth
+  }
+  showMain();
+}
+
+function showMain() {
+  document.getElementById('mainControls').style.display = 'flex';
+  updateLimitUI();
+}
+
+init();
+
+// ===================== SPEECH REC =====================
+let recognition = null, isListening = false, transcript = '';
+
+function setupRec() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return null;
+  const r = new SR();
+  r.continuous = false; r.interimResults = true; r.lang = 'en-US';
+  r.onresult = (e) => {
+    let fin = '', int = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) fin += e.results[i][0].transcript;
+      else int += e.results[i][0].transcript;
+    }
+    transcript = (transcript + fin).trim() || int;
+    updateTranscript(transcript || int);
+    if (transcript) document.getElementById('storyBtn').disabled = false;
+  };
+  r.onend = () => {
+    isListening = false;
+    document.getElementById('micBtn').classList.remove('listening');
+    document.querySelector('.mic-label').textContent = 'Tap to talk!';
+    if (transcript) document.getElementById('storyBtn').disabled = false;
+  };
+  r.onerror = (e) => {
+    isListening = false;
+    recognition = null;
+    document.getElementById('micBtn').classList.remove('listening');
+    document.querySelector('.mic-label').textContent = 'Tap to talk!';
+    // Silently ignore all common Safari mic glitches — just reset and wait
+    const silentErrors = ['no-speech', 'audio-capture', 'aborted', 'network'];
+    if (silentErrors.includes(e.error)) return;
+    // If we already have a transcript, don't show error at all
+    if (transcript) return;
+    showError('Tap the mic and try again! 🎤');
+    setTimeout(() => hideError(), 2500);
+  };
+  return r;
+}
+
+function updateTranscript(text) {
+  const el = document.getElementById('transcript');
+  if (text) { el.textContent = '"' + text + '"'; el.classList.remove('empty'); }
+  else { el.textContent = 'Tap the pink button and tell me what you want! 🌟'; el.classList.add('empty'); }
+}
+
+function toggleMic() {
+  // Always kill any existing recognition first to avoid stuck state
+  if (recognition) {
+    try { recognition.abort(); } catch(e) {}
+    recognition = null;
+  }
+  if (isListening) {
+    isListening = false;
+    document.getElementById('micBtn').classList.remove('listening');
+    document.querySelector('.mic-label').textContent = 'Tap to talk!';
+    return;
+  }
+  hideError();
+  recognition = setupRec();
+  if (!recognition) { showError('Try Safari on iPad for voice!'); return; }
+  transcript = '';
+  updateTranscript('');
+  document.getElementById('storyBtn').disabled = true;
+  try {
+    recognition.start();
+    isListening = true;
+    document.getElementById('micBtn').classList.add('listening');
+    document.querySelector('.mic-label').textContent = 'Listening... 👂';
+  } catch(e) {
+    // start() throws if called too quickly — wait and retry once
+    setTimeout(() => {
+      recognition = setupRec();
+      try {
+        recognition.start();
+        isListening = true;
+        document.getElementById('micBtn').classList.add('listening');
+        document.querySelector('.mic-label').textContent = 'Listening... 👂';
+      } catch(e2) {
+        showError('Tap the mic and try again! 🎤');
+        setTimeout(() => hideError(), 2500);
+      }
+    }, 300);
+  }
+}
+
+// ===================== TAP-TO-POP LOADING GAME =====================
+const POP_EMOJI_SETS = {
+  dragon: ['🐉','🔥','💎','🏰','⚔️'],
+  unicorn: ['🦄','🌈','✨','💫','🌸'],
+  space: ['🚀','⭐','🌙','👽','🪐'],
+  princess: ['👑','🌸','💎','🦋','🪄'],
+  pirate: ['🏴‍☠️','⚓','🦜','💰','🗺️'],
+  food: ['🍕','🍦','🍭','🍩','🧁'],
+  animal: ['🦁','🐘','🦊','🐧','🐬'],
+  default: ['⭐','🌈','🎈','🍭','🦄','🐸','🦋','🌸','🚀','💫'],
+};
+
+let popInterval = null;
+let popCount = 0;
+let popEmojis = POP_EMOJI_SETS.default;
+
+function getPopEmojis() {
+  const t = transcript.toLowerCase();
+  if (t.match(/dragon|fire|castle/)) return POP_EMOJI_SETS.dragon;
+  if (t.match(/unicorn|rainbow|magic/)) return POP_EMOJI_SETS.unicorn;
+  if (t.match(/space|rocket|planet|star/)) return POP_EMOJI_SETS.space;
+  if (t.match(/princess|fairy|crown/)) return POP_EMOJI_SETS.princess;
+  if (t.match(/pirate|treasure|ship/)) return POP_EMOJI_SETS.pirate;
+  if (t.match(/food|pizza|cake|candy|ice cream/)) return POP_EMOJI_SETS.food;
+  if (t.match(/animal|lion|elephant|dog|cat/)) return POP_EMOJI_SETS.animal;
+  return POP_EMOJI_SETS.default;
+}
+
+function spawnPopEmoji() {
+  const game = document.getElementById('loadingGame');
+  if (!game) return;
+  const el = document.createElement('div');
+  el.className = 'pop-emoji';
+  el.textContent = popEmojis[Math.floor(Math.random() * popEmojis.length)];
+  const left = 5 + Math.random() * 85;
+  const fallDuration = (2.5 + Math.random() * 2).toFixed(1);
+  const rot = (Math.random() * 60 - 30).toFixed(0) + 'deg';
+  el.style.cssText = `left:${left}%;--fall:${fallDuration}s;--rot:${rot}`;
+  el.addEventListener('click', () => popIt(el));
+  el.addEventListener('touchstart', (e) => { e.preventDefault(); popIt(el); }, { passive: false });
+  game.appendChild(el);
+  // Remove after fall completes
+  setTimeout(() => el.remove(), (parseFloat(fallDuration) + 0.5) * 1000);
+}
+
+function popIt(el) {
+  if (el.classList.contains('popped')) return;
+  el.classList.add('popped');
+  playSound('boing');
+  popCount++;
+  const score = document.getElementById('popScore');
+  if (score) {
+    const msgs = ['✨ Pop!', '💥 Yes!', '🎉 Nice!', '⭐ POW!', '🌟 Boom!'];
+    score.textContent = msgs[popCount % msgs.length] + ' ' + popCount + ' popped!';
+  }
+  setTimeout(() => el.remove(), 350);
+}
+
+function startPopGame() {
+  popCount = 0;
+  popEmojis = getPopEmojis();
+  const game = document.getElementById('loadingGame');
+  if (game) game.innerHTML = '';
+  const score = document.getElementById('popScore');
+  if (score) score.textContent = '✨ Tap to pop!';
+  // Spawn emojis at intervals
+  spawnPopEmoji();
+  popInterval = setInterval(spawnPopEmoji, 600);
+}
+
+function stopPopGame() {
+  if (popInterval) { clearInterval(popInterval); popInterval = null; }
+  const game = document.getElementById('loadingGame');
+  if (game) game.innerHTML = '';
+}
+let pages = [], currentPage = 0;
+
+const SYSTEM_PROMPT = `You are a wildly creative, playful interactive storybook maker for children ages 3-7. You create stories that feel like VIDEO GAMES mixed with picture books — full of silly sounds, tappable characters, surprises, and mini-games.
+
+Return ONLY valid JSON (no markdown, no extra text) in this exact structure:
+{
+  "title": "Fun Story Title",
+  "pages": [
+    {
+      "text": "2-3 short simple sentences for this page.",
+      "scene": {
+        "main": "🐉",
+        "bg": ["🌋","🌋","🔥","🔥","💎"],
+        "bgStyle": "background: linear-gradient(160deg, #3d0000, #1a0000);",
+        "tapEffect": "fire",
+        "tapEmoji": "💥"
+      },
+      "sounds": [
+        { "label": "💨 FART!", "sound": "fart" }
+      ],
+      "shake": {
+        "emoji": "💰"
+      }
+    }
+  ]
+}
+
+Rules:
+- 6-8 pages total
+- Each page text: 2-3 short simple sentences only. Sprinkle ONE ElevenLabs v3 emotion tag per page max, placed just before the sentence it affects. Available tags: [excited] [whispering] [laughing] [sad] [scared] [dramatic] [sighs]. Example: "Teo toddled into the marshmallow pile. [laughing] It was the funniest thing Aunty Ping had ever seen."
+- scene.main: big central tappable character (single emoji)
+- scene.bg: 3-8 background emojis matching the scene
+- scene.bgStyle: CSS gradient string matching the mood (e.g. "background: linear-gradient(160deg, #001a3d, #003d1a);")
+- scene.tapEffect: one of: bounce, spin, explode, fire, rainbow, fart, dizzy
+- scene.tapEmoji: emoji bursting out on tap
+- sounds: only include on 1-2 pages in the ENTIRE story (not every page). Pick ONE sound per page, either fart or boing only — fart for the funniest silliest moment in the story, boing for a bouncy fun moment. Leave sounds empty [] on all other pages.
+- shake: optional, max 2 pages. emoji rains down when iPad is shaken.
+- Be VERY silly and match everything to the story. Match the scenes, sounds, and shake emojis to the story theme!
+- The main characters are always: Enna (age 7, adventurous and brave), Maddie (age 4, giggly and loves animals), Teo (age 1, chubby baby who toddles around and causes cute chaos), and Aunty Ping (fun, loving, a little silly). Always spell their names exactly like this. Teo is too young to talk but makes cute baby sounds like "ba ba!" and "goo!". Give each character a moment to shine each story.`;
+
+async function generateStory() {
+  unlockAudio();
+  if (!transcript) return;
+  if (getUsed() >= STORIES_PER_DAY) { showError('Come back tomorrow for more stories! 🌙'); return; }
+  hideError();
+  document.getElementById('mainControls').style.display = 'none';
+  document.getElementById('reader').classList.remove('show');
+  document.getElementById('loading').classList.add('show');
+  startPopGame();
+
+  try {
+    const userPrompt = `The child wants: "${transcript}"${STORY_PROMPT_EXTRAS ? ' Extra instructions: ' + STORY_PROMPT_EXTRAS : ''}
+
+Characters to always include: ${KIDS.map(k => `${k.name} (age ${k.age})`).join(', ')}, and ${AUNTY}. Spell names exactly as written.`;
+
+    const response = await fetch('/.netlify/functions/generate-story', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt: userPrompt,
+        systemPrompt: SYSTEM_PROMPT,
+      })
+    });
+
+    if (response.status === 401) {
+      window.location.href = '/login';
+      return;
+    }
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || 'Something went wrong');
+    }
+
+    const data = await response.json();
+    let raw = data.content[0].text.trim();
+    raw = raw.replace(/^```json\s*/i,'').replace(/^```\s*/i,'').replace(/```\s*$/i,'').trim();
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('Story came out wonky — try again!');
+    const story = JSON.parse(jsonMatch[0]);
+
+    pages = story.pages;
+    currentPage = 0;
+
+    // Pre-cache all sounds before showing first page
+    const allSoundTypes = pages.flatMap(p => [
+      ...(p.sounds || []).map(s => s.sound),
+      'boing', 'magic'
+    ]);
+    document.getElementById('loadingMsg').textContent = 'Loading sounds...';
+    await preloadSounds(allSoundTypes);
+
+    stopPopGame();
+    document.getElementById('storyTitle').textContent = story.title;
+    // Await page 0 audio before showing, pre-fetch page 1 in background
+    await fetchPageAudio(0);
+    if (pages[1]) fetchPageAudio(1);
+    showPage(0);
+    // Only reveal reader once page is fully populated
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('reader').classList.add('show');
+    // Re-trigger audio now that reader is visible and user gesture chain is fresh
+    speakPage(0);
+    incUsed();
+    updateLimitUI();
+
+  } catch(err) {
+    stopPopGame();
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('mainControls').style.display = 'flex';
+    showError('Uh oh! ' + (err.message || 'Something went wrong. Try again!'));
+  }
+}
+
+// ===================== PAGE DISPLAY =====================
+let currentShakeEmoji = null;
+
+function showPage(index) {
+  const page = pages[index];
+  const isLast = index === pages.length - 1;
+
+  const card = document.getElementById('pageCard');
+  card.style.animation = 'none'; card.offsetHeight;
+  card.style.animation = 'pageIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards';
+
+  const scene = page.scene || {};
+  document.getElementById('sceneMain').textContent = scene.main || '🌟';
+  document.getElementById('sceneMain').className = 'scene-main';
+  document.getElementById('sceneBox').style.cssText = (scene.bgStyle || 'background: linear-gradient(160deg, #1a0a3a, #0d1a4a);') + '; width:100%; height:220px; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; cursor:pointer; user-select:none;';
+  document.getElementById('sceneBg').innerHTML = (scene.bg || []).map(e => `<span>${e}</span>`).join('');
+  document.getElementById('sceneBox').dataset.tapEffect = scene.tapEffect || 'bounce';
+  document.getElementById('sceneBox').dataset.tapEmoji = scene.tapEmoji || '✨';
+
+  document.getElementById('pageCounter').textContent = `Page ${index + 1} of ${pages.length}`;
+  // Strip emotion tags for display but keep them for TTS
+  const displayText = page.text.replace(/\[.*?\]/g, '').replace(/\s+/g, ' ').trim();
+  document.getElementById('pageText').textContent = displayText;
+
+  // Sound buttons
+  const sb = document.getElementById('soundButtons');
+  sb.innerHTML = '';
+  (page.sounds || []).forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-sound';
+    btn.textContent = s.label;
+    btn.onclick = () => playSound(s.sound);
+    sb.appendChild(btn);
+  });
+
+  // Shake
+  const shakeHint = document.getElementById('shakeHint');
+  if (page.shake) {
+    currentShakeEmoji = page.shake.emoji || '✨';
+    shakeHint.style.display = 'block';
+  } else {
+    currentShakeEmoji = null;
+    shakeHint.style.display = 'none';
+  }
+
+  // Nav
+  document.getElementById('prevBtn').style.display = index > 0 ? 'block' : 'none';
+  const nextBtn = document.getElementById('nextBtn');
+  const theEnd = document.getElementById('theEnd');
+  const pageNav = document.getElementById('pageNav');
+  if (isLast) {
+    nextBtn.style.display = 'none';
+    pageNav.style.display = index > 0 ? 'flex' : 'none';
+    theEnd.style.display = 'block';
+  } else {
+    nextBtn.style.display = 'block';
+    nextBtn.textContent = 'Next ➡️';
+    pageNav.style.display = 'flex';
+    theEnd.style.display = 'none';
+  }
+
+  speakPage(index);
+}
+
+function changePage(dir) {
+  unlockAudio();
+  const n = currentPage + dir;
+  if (n < 0 || n >= pages.length) return;
+  currentPage = n;
+  showPage(currentPage);
+}
+
+// ===================== TAP SCENE =====================
+function tapScene() {
+  const box = document.getElementById('sceneBox');
+  const mainEl = document.getElementById('sceneMain');
+  const effect = box.dataset.tapEffect || 'bounce';
+  const emoji = box.dataset.tapEmoji || '✨';
+
+  mainEl.classList.remove('wiggle'); mainEl.offsetHeight; mainEl.classList.add('wiggle');
+  burstParticles(box, emoji, effect);
+  const effectSounds = { fire:'roar', fart:'fart', rainbow:'magic', explode:'roar', splash:'boing', dizzy:'boing', bounce:'boing', spin:'magic' };
+  if (effectSounds[effect]) playSound(effectSounds[effect]);
+}
+
+function burstParticles(container, emoji, effect) {
+  const count = effect === 'explode' ? 8 : 5;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.textContent = emoji;
+    const angle = (360 / count) * i;
+    const dist = 60 + Math.random() * 40;
+    p.style.setProperty('--tx', `${Math.cos(angle * Math.PI/180) * dist}px`);
+    p.style.setProperty('--ty', `${Math.sin(angle * Math.PI/180) * dist}px`);
+    p.style.left = '50%'; p.style.top = '50%';
+    container.appendChild(p);
+    setTimeout(() => p.remove(), 700);
+  }
+}
+
+// ===================== SHAKE =====================
+let lastShake = 0;
+window.addEventListener('devicemotion', (e) => {
+  if (!currentShakeEmoji) return;
+  const a = e.accelerationIncludingGravity;
+  if (!a) return;
+  const force = Math.abs(a.x||0) + Math.abs(a.y||0) + Math.abs(a.z||0);
+  const now = Date.now();
+  if (force > 30 && now - lastShake > 1000) { lastShake = now; doShake(); }
+});
+
+function doShake() {
+  document.getElementById('appShell').classList.add('shake-anim');
+  setTimeout(() => document.getElementById('appShell').classList.remove('shake-anim'), 500);
+  playSound('magic');
+  for (let i = 0; i < 10; i++) {
+    setTimeout(() => {
+      const el = document.createElement('div');
+      el.style.cssText = `position:fixed;top:-40px;left:${Math.random()*100}vw;font-size:${1.5+Math.random()}rem;z-index:999;pointer-events:none;transition:transform 1.5s ease-in,opacity 0.5s 1s;`;
+      el.textContent = currentShakeEmoji;
+      document.body.appendChild(el);
+      requestAnimationFrame(() => { el.style.transform = `translateY(110vh) rotate(${Math.random()*360}deg)`; el.style.opacity = '0'; });
+      setTimeout(() => el.remove(), 2000);
+    }, i * 80);
+  }
+}
+
+// ===================== SOUNDS (Web Audio) =====================
+// Four reliable sounds: boing, fart, roar, magic
+function playSound(type) {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AC();
+    const t = ctx.currentTime;
+
+    if (type === 'boing') {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.setValueAtTime(180, t);
+      o.frequency.exponentialRampToValueAtTime(900, t + 0.12);
+      o.frequency.exponentialRampToValueAtTime(500, t + 0.35);
+      g.gain.setValueAtTime(0.55, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+      o.start(t); o.stop(t + 0.4);
+
+    } else if (type === 'fart') {
+      // Layered fart: noise + low wobble oscillator for maximum grossness
+      const dur = 0.75;
+      const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) {
+        const t2 = i / ctx.sampleRate;
+        const env = Math.pow(1 - t2 / dur, 0.35) * (0.5 + 0.5 * Math.sin(t2 * 18));
+        const wobble = Math.sin(2 * Math.PI * t2 * (60 + Math.sin(t2 * 4) * 20));
+        d[i] = (wobble * 0.6 + (Math.random() * 2 - 1) * 0.4) * env * 0.95;
+      }
+      const src = ctx.createBufferSource();
+      const filt = ctx.createBiquadFilter();
+      filt.type = 'lowpass'; filt.frequency.value = 320;
+      filt.Q.value = 2;
+      src.buffer = buf; src.connect(filt); filt.connect(ctx.destination); src.start();
+
+    } else if (type === 'roar') {
+      // Two oscillators for a richer growl
+      [90, 135].forEach((freq, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.setValueAtTime(freq, t);
+        o.frequency.exponentialRampToValueAtTime(freq * 0.6, t + 0.7);
+        g.gain.setValueAtTime(i === 0 ? 0.4 : 0.25, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+        o.start(t); o.stop(t + 0.8);
+      });
+      // Noise layer
+      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.8, ctx.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 0.6) * 0.3;
+      const src = ctx.createBufferSource();
+      const filt = ctx.createBiquadFilter(); filt.type = 'bandpass'; filt.frequency.value = 600;
+      src.buffer = buf; src.connect(filt); filt.connect(ctx.destination); src.start();
+
+    } else if (type === 'magic') {
+      [523, 659, 784, 1047, 1318].forEach((freq, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = freq;
+        const start = t + i * 0.07;
+        g.gain.setValueAtTime(0, start);
+        g.gain.linearRampToValueAtTime(0.28, start + 0.04);
+        g.gain.exponentialRampToValueAtTime(0.001, start + 0.35);
+        o.start(start); o.stop(start + 0.35);
+      });
+    }
+  } catch(e) { console.warn('Sound error:', e); }
+}
+
+// No-op so preloadSounds calls don't break anything
+async function preloadSounds() {}
+
+// ===================== ELEVENLABS TTS =====================
+let currentAudio = null;
+let activePageIndex = -1;         // which page is currently "active"
+const audioCache = {};            // pageIndex -> Audio | 'loading' | 'error'
+const fetchPromises = {};         // pageIndex -> Promise (so we never double-fetch)
+
+async function fetchPageAudio(pageIndex) {
+  if (!pages[pageIndex]) return;
+  if (fetchPromises[pageIndex]) return fetchPromises[pageIndex]; // already in flight
+
+  fetchPromises[pageIndex] = (async () => {
+    try {
+      audioCache[pageIndex] = 'loading';
+      const res = await fetch('/.netlify/functions/tts', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: pages[pageIndex].text })
+      });
+      if (!res.ok) { audioCache[pageIndex] = 'error'; return; }
+      const data = await res.json();
+      // Decode base64 audio returned by the function
+      const binary = atob(data.audio);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: data.mimeType || 'audio/mpeg' });
+      audioCache[pageIndex] = new Audio(URL.createObjectURL(blob));
+    } catch(e) {
+      audioCache[pageIndex] = 'error';
+      console.warn('TTS prefetch error:', e);
+    }
+  })();
+
+  return fetchPromises[pageIndex];
+}
+
+// Unlock Safari audio context on first user tap
+let audioUnlocked = false;
+function unlockAudio() {
+  if (audioUnlocked) return;
+  audioUnlocked = true;
+  // Play a silent buffer to unlock audio on Safari
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AC();
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+  } catch(e) {}
+  // Force iOS to route audio through main speaker (not earpiece)
+  // by playing a silent inline video element
+  try {
+    const v = document.getElementById('iosSpeakerUnlock');
+    if (v) { v.play().catch(() => {}); }
+  } catch(e) {}
+}
+
+async function speakPage(pageIndex) {
+  stopCurrentAudio();
+  activePageIndex = pageIndex;
+
+  // If already cached and ready, play immediately
+  const cached = audioCache[pageIndex];
+  if (cached && cached !== 'loading' && cached !== 'error') {
+    playAudioElement(cached);
+    if (pages[pageIndex + 1]) fetchPageAudio(pageIndex + 1);
+    return;
+  }
+
+  // Not cached yet — fetch then play
+  await fetchPageAudio(pageIndex);
+  if (activePageIndex !== pageIndex) return;
+
+  const audio = audioCache[pageIndex];
+  if (audio && audio !== 'loading' && audio !== 'error') {
+    playAudioElement(audio);
+  }
+
+  if (pages[pageIndex + 1]) fetchPageAudio(pageIndex + 1);
+}
+
+function playAudioElement(audio) {
+  // Route through Web Audio API to force speaker output + consistent volume
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AC();
+    const source = audioCtx.createMediaElementSource(audio);
+    const gainNode = audioCtx.createGain();
+    gainNode.gain.value = 1.0;
+    source.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    audio.currentTime = 0;
+    audio.volume = 1.0;
+    currentAudio = audio;
+    audio.play().catch(e => console.warn('play error:', e));
+  } catch(e) {
+    // Fallback: plain play
+    audio.currentTime = 0;
+    audio.volume = 1.0;
+    currentAudio = audio;
+    audio.play().catch(() => {});
+  }
+}
+
+function stopCurrentAudio() {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.currentTime = 0;
+    currentAudio = null;
+  }
+}
+
+// Pause when user switches away, resume when they come back
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (currentAudio) currentAudio.pause();
+  } else {
+    if (currentAudio) currentAudio.play().catch(() => {});
+  }
+});
+
+function clearAudioCache() {
+  stopCurrentAudio();
+  activePageIndex = -1;
+  Object.keys(audioCache).forEach(k => delete audioCache[k]);
+  Object.keys(fetchPromises).forEach(k => delete fetchPromises[k]);
+}
+
+// ===================== NEW STORY =====================
+function newStory() {
+  clearAudioCache();
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  transcript = '';
+  updateTranscript('');
+  document.getElementById('storyBtn').disabled = true;
+  document.getElementById('reader').classList.remove('show');
+  document.getElementById('mainControls').style.display = 'flex';
+  updateLimitUI();
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg; el.classList.add('show');
+}
+function hideError() {
+  document.getElementById('errorMsg').classList.remove('show');
+}
+</script>
+</body>
+</html>
