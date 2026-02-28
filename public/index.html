@@ -489,19 +489,28 @@ function updateTranscript(text) {
   else { el.textContent = 'Tap the pink button and tell me what you want! 🌟'; el.classList.add('empty'); }
 }
 
-function toggleMic() {
-  // Always kill any existing recognition first to avoid stuck state
+function killRecognition() {
+  // Null handlers BEFORE abort so no async events leak out
   if (recognition) {
+    recognition.onresult = null;
+    recognition.onend = null;
+    recognition.onerror = null;
     try { recognition.abort(); } catch(e) {}
     recognition = null;
   }
+}
+
+function toggleMic() {
+  // Check intent BEFORE any abort side-effects can flip isListening
   if (isListening) {
     isListening = false;
     document.getElementById('micBtn').classList.remove('listening');
     document.querySelector('.mic-label').textContent = 'Tap to talk!';
+    killRecognition();
     return;
   }
   hideError();
+  killRecognition();
   recognition = setupRec();
   if (!recognition) { showError('Try Safari on iPad for voice!'); return; }
   transcript = '';
@@ -514,7 +523,9 @@ function toggleMic() {
     document.querySelector('.mic-label').textContent = 'Listening... 👂';
   } catch(e) {
     // start() throws if called too quickly — wait and retry once
+    recognition = null;
     setTimeout(() => {
+      if (isListening) return; // user tapped again during the wait
       recognition = setupRec();
       try {
         recognition.start();
@@ -522,6 +533,7 @@ function toggleMic() {
         document.getElementById('micBtn').classList.add('listening');
         document.querySelector('.mic-label').textContent = 'Listening... 👂';
       } catch(e2) {
+        recognition = null;
         showError('Tap the mic and try again! 🎤');
         setTimeout(() => hideError(), 2500);
       }
